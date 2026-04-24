@@ -1,0 +1,92 @@
+{
+  "entities": {
+    "Distributor": {
+      "title": "Distributor",
+      "description": "Entity representing a supplier or distributor.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "contact": { "type": "string" },
+        "address": { "type": "string" },
+        "ownerId": { "type": "string", "description": "The UID of the owner who created this data." }
+      },
+      "required": ["name", "ownerId"]
+    },
+    "ItemReceipt": {
+      "title": "Item Receipt",
+      "description": "Incoming goods record.",
+      "type": "object",
+      "properties": {
+        "date": { "type": "string", "format": "date-time" },
+        "distributorId": { "type": "string" },
+        "itemName": { "type": "string" },
+        "paymentType": { "type": "string", "enum": ["tempo", "tunai"] },
+        "amount": { "type": "number" },
+        "notes": { "type": "string" },
+        "ownerId": { "type": "string" }
+      },
+      "required": ["date", "distributorId", "itemName", "paymentType", "amount", "ownerId"]
+    },
+    "Bill": {
+      "title": "Bill",
+      "description": "Billing record (invoice).",
+      "type": "object",
+      "properties": {
+        "date": { "type": "string", "format": "date-time" },
+        "distributorId": { "type": "string" },
+        "itemName": { "type": "string" },
+        "amount": { "type": "number" },
+        "paymentType": { "type": "string", "enum": ["tempo", "tunai"] },
+        "dueDate": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["lunas", "pending"] },
+        "ownerId": { "type": "string" }
+      },
+      "required": ["date", "distributorId", "itemName", "paymentType", "amount", "ownerId"]
+    },
+    "Settings": {
+      "title": "Settings",
+      "description": "App settings for a user.",
+      "type": "object",
+      "properties": {
+        "theme": { "type": "string", "enum": ["light", "dark", "system"] },
+        "headerTemplate": { "type": "string" },
+        "footerTemplate": { "type": "string" },
+        "ownerId": { "type": "string" }
+      },
+      "required": ["ownerId"]
+    },
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "Profile data and roles.",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string" },
+        "role": { "type": "string", "enum": ["owner", "staff"] },
+        "ownerId": { "type": "string", "description": "The UID of the owner this user belongs to." }
+      },
+      "required": ["email", "role", "ownerId"]
+    }
+  },
+  "firestore": {
+    "/distributors/{distId}": {
+      "schema": "Distributor",
+      "description": "List of distributors."
+    },
+    "/item_receipts/{receiptId}": {
+      "schema": "ItemReceipt",
+      "description": "History of incoming goods."
+    },
+    "/bills/{billId}": {
+      "schema": "Bill",
+      "description": "History of bills."
+    },
+    "/settings/{userId}": {
+      "schema": "Settings",
+      "description": "User specific settings."
+    },
+    "/user_profiles/{userId}": {
+      "schema": "UserProfile",
+      "description": "User profile and role associations."
+    }
+  }
+}

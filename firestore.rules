@@ -1,0 +1,89 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function getUserProfile() {
+      return get(/databases/$(database)/documents/user_profiles/$(request.auth.uid)).data;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isOwnerOf(data) {
+      return isSignedIn() && data.ownerId == getUserProfile().ownerId;
+    }
+
+    function isSelf(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Validations
+    function isValidDistributor(data) {
+      return data.name is string && data.name.size() > 0 && data.name.size() < 256
+          && data.ownerId == getUserProfile().ownerId;
+    }
+
+    function isValidItemReceipt(data) {
+      return data.itemName is string && data.itemName.size() > 0
+          && data.amount is number && data.amount >= 0
+          && data.paymentType in ['tempo', 'tunai']
+          && data.ownerId == getUserProfile().ownerId;
+    }
+
+    function isValidBill(data) {
+      return data.itemName is string && data.itemName.size() > 0
+          && data.amount is number && data.amount >= 0
+          && data.paymentType in ['tempo', 'tunai']
+          && data.ownerId == getUserProfile().ownerId;
+    }
+
+    // Collection matches
+    match /user_profiles/{userId} {
+      allow list: if true; // Allow username lookup during login
+      allow get: if isSignedIn();
+      allow create: if isSignedIn() && isSelf(userId) 
+                    && request.resource.data.role in ['owner', 'staff']
+                    && (request.resource.data.role == 'owner' ? request.resource.data.ownerId == userId : true);
+      allow update: if isSelf(userId) && request.resource.data.role == resource.data.role; 
+    }
+
+    match /distributors/{distId} {
+      allow list: if isSignedIn() && resource.data.ownerId == getUserProfile().ownerId;
+      allow get: if isSignedIn() && isOwnerOf(resource.data);
+      allow create: if isSignedIn() && isValidDistributor(request.resource.data);
+      allow update: if isSignedIn() && isOwnerOf(resource.data) && isValidDistributor(request.resource.data);
+      allow delete: if isSignedIn() && isOwnerOf(resource.data) && getUserProfile().role == 'owner';
+    }
+
+    match /item_receipts/{receiptId} {
+      allow list: if isSignedIn() && resource.data.ownerId == getUserProfile().ownerId;
+      allow get: if isSignedIn() && isOwnerOf(resource.data);
+      allow create: if isSignedIn() && isValidItemReceipt(request.resource.data);
+      allow update: if isSignedIn() && isOwnerOf(resource.data) && isValidItemReceipt(request.resource.data);
+      allow delete: if isSignedIn() && isOwnerOf(resource.data) && getUserProfile().role == 'owner';
+    }
+
+    match /bills/{billId} {
+      allow list: if isSignedIn() && resource.data.ownerId == getUserProfile().ownerId;
+      allow get: if isSignedIn() && isOwnerOf(resource.data);
+      allow create: if isSignedIn() && isValidBill(request.resource.data);
+      allow update: if isSignedIn() && isOwnerOf(resource.data) && isValidBill(request.resource.data);
+      allow delete: if isSignedIn() && isOwnerOf(resource.data) && getUserProfile().role == 'owner';
+    }
+
+    match /settings/{userId} {
+      allow get: if isSelf(userId);
+      allow write: if isSelf(userId) && request.resource.data.ownerId == getUserProfile().ownerId;
+    }
+  }
+}
