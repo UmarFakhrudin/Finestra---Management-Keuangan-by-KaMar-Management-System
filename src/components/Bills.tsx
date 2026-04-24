@@ -73,45 +73,63 @@ export default function Bills({ profile, appSettings, onSave, setSyncStatus }: {
     const isTunai = formData.paymentType === 'tunai';
 
     setSyncStatus?.('saving');
-    await addDoc(collection(db, 'bills'), {
-      category: formData.category,
-      distributorId: formData.distributorId,
-      itemName: formData.itemName,
-      cashAmount: isTunai ? total : 0,
-      tempoAmount: isTunai ? 0 : total,
-      shippingCost: 0,
-      amount: total,
-      dueDate: isTunai ? null : formData.dueDate,
-      date: new Date(formData.date).toISOString(),
-      createdAt: new Date().toISOString(),
-      status: isTunai ? 'lunas' : 'pending',
-      ownerId: profile.ownerId
-    });
+    try {
+      await addDoc(collection(db, 'bills'), {
+        category: formData.category,
+        distributorId: formData.distributorId,
+        itemName: formData.itemName,
+        cashAmount: isTunai ? total : 0,
+        tempoAmount: isTunai ? 0 : total,
+        shippingCost: 0,
+        amount: total,
+        dueDate: isTunai ? null : formData.dueDate,
+        date: new Date(formData.date).toISOString(),
+        createdAt: new Date().toISOString(),
+        status: isTunai ? 'lunas' : 'pending',
+        ownerId: profile.ownerId
+      });
 
-    onSave?.();
-    setIsModalOpen(false);
-    setFormData({
-      category: 'sales',
-      paymentType: 'tempo',
-      date: format(new Date(), 'yyyy-MM-dd'),
-      distributorId: '',
-      itemName: '',
-      amount: '',
-      dueDate: '',
-    });
+      onSave?.();
+      setIsModalOpen(false);
+      setFormData({
+        category: 'sales',
+        paymentType: 'tempo',
+        date: format(new Date(), 'yyyy-MM-dd'),
+        distributorId: '',
+        itemName: '',
+        amount: '',
+        dueDate: '',
+      });
+    } catch (err) {
+      console.error("Error saving bill:", err);
+      setSyncStatus?.('error');
+      setTimeout(() => setSyncStatus?.('idle'), 3000);
+    }
   };
 
   const toggleStatus = async (bill: Bill) => {
     setSyncStatus?.('saving');
-    const newStatus = bill.status === 'pending' ? 'lunas' : 'pending';
-    await updateDoc(doc(db, 'bills', bill.id), { status: newStatus });
-    onSave?.();
+    try {
+      const newStatus = bill.status === 'pending' ? 'lunas' : 'pending';
+      await updateDoc(doc(db, 'bills', bill.id), { status: newStatus });
+      onSave?.();
+    } catch (err) {
+      console.error("Error toggling status:", err);
+      setSyncStatus?.('error');
+      setTimeout(() => setSyncStatus?.('idle'), 3000);
+    }
   };
 
   const deleteBill = async (id: string) => {
     setSyncStatus?.('saving');
-    await deleteDoc(doc(db, 'bills', id));
-    onSave?.();
+    try {
+      await deleteDoc(doc(db, 'bills', id));
+      onSave?.();
+    } catch (err) {
+      console.error("Error deleting bill:", err);
+      setSyncStatus?.('error');
+      setTimeout(() => setSyncStatus?.('idle'), 3000);
+    }
   };
 
   const filteredBills = bills.filter(b => 

@@ -85,13 +85,13 @@ export default function Settings({ profile, onSave, setSyncStatus }: {
       setSyncStatus?.('saving');
       try {
         await updateDoc(doc(db, 'app_settings', appSettings.id), appForm);
-        onSave?.();
-        setSyncStatus?.('saved');
+        onSave?.(); // App.tsx will handle the 'saved' -> 'idle' transition
       } catch (err) {
         console.error("Auto-save failed:", err);
         setSyncStatus?.('error');
+        setTimeout(() => setSyncStatus?.('idle'), 3000);
       }
-    }, 600); // 600ms debounce for faster feel
+    }, 400); // Faster 400ms debounce
 
     return () => {
       if (saveTimeout.current) clearTimeout(saveTimeout.current);
@@ -103,10 +103,17 @@ export default function Settings({ profile, onSave, setSyncStatus }: {
     if (!appSettings?.id) return;
     
     setSyncStatus?.('saving');
-    await updateDoc(doc(db, 'app_settings', appSettings.id), appForm);
-    setSaved(true);
-    onSave?.();
-    setTimeout(() => setSaved(false), 2000);
+    try {
+      await updateDoc(doc(db, 'app_settings', appSettings.id), appForm);
+      setSaved(true);
+      onSave?.();
+      setTimeout(() => setSaved(true), 2000); // Keep 'Tersimpan' for 2s
+      setTimeout(() => setSaved(false), 4000);
+    } catch (err) {
+      console.error("Manual save failed:", err);
+      setSyncStatus?.('error');
+      setTimeout(() => setSyncStatus?.('idle'), 3000);
+    }
   };
 
   const handleAddTeamMember = async (e: React.FormEvent) => {

@@ -6,7 +6,11 @@ import { Plus, Pencil, Trash2, X, Save, Truck, Phone, MapPin, Search } from 'luc
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 
-export default function DistributorList({ profile }: { profile: UserProfile }) {
+export default function DistributorList({ profile, onSave, setSyncStatus }: { 
+  profile: UserProfile,
+  onSave?: () => void,
+  setSyncStatus?: (status: 'idle' | 'saving' | 'saved' | 'error') => void
+}) {
   const [distributors, setDistributors] = useState<Distributor[]>([]);
   const [isModalOpen, setModalOpen] = useState(false);
   const [editingDist, setEditingDist] = useState<Distributor | null>(null);
@@ -27,14 +31,22 @@ export default function DistributorList({ profile }: { profile: UserProfile }) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (editingDist) {
-      await updateDoc(doc(db, 'distributors', editingDist.id!), { ...formData });
-    } else {
-      await addDoc(collection(db, 'distributors'), { ...formData, ownerId: profile.ownerId });
+    setSyncStatus?.('saving');
+    try {
+      if (editingDist) {
+        await updateDoc(doc(db, 'distributors', editingDist.id!), { ...formData });
+      } else {
+        await addDoc(collection(db, 'distributors'), { ...formData, ownerId: profile.ownerId });
+      }
+      onSave?.();
+      setModalOpen(false);
+      setEditingDist(null);
+      setFormData({ name: '', contact: '', address: '' });
+    } catch (err) {
+      console.error("Error saving distributor:", err);
+      setSyncStatus?.('error');
+      setTimeout(() => setSyncStatus?.('idle'), 3000);
     }
-    setModalOpen(false);
-    setEditingDist(null);
-    setFormData({ name: '', contact: '', address: '' });
   };
 
   const editDist = (dist: Distributor) => {
@@ -45,7 +57,15 @@ export default function DistributorList({ profile }: { profile: UserProfile }) {
 
   const deleteDist = async (id: string) => {
     if (confirm('Verifikasi: Apakah Anda yakin ingin menghentikan rekam jejak kemitraan ini?')) {
-      await deleteDoc(doc(db, 'distributors', id));
+      setSyncStatus?.('saving');
+      try {
+        await deleteDoc(doc(db, 'distributors', id));
+        onSave?.();
+      } catch (err) {
+        console.error("Error deleting distributor:", err);
+        setSyncStatus?.('error');
+        setTimeout(() => setSyncStatus?.('idle'), 3000);
+      }
     }
   };
 

@@ -11,7 +11,11 @@ import {
 import { format, startOfMonth, endOfMonth, setMonth, setYear } from 'date-fns';
 import { motion, AnimatePresence } from 'motion/react';
 
-export default function IncomingGoods({ profile }: { profile: UserProfile }) {
+export default function IncomingGoods({ profile, onSave, setSyncStatus }: { 
+  profile: UserProfile,
+  onSave?: () => void,
+  setSyncStatus?: (status: 'idle' | 'saving' | 'saved' | 'error') => void
+}) {
   const [distributors, setDistributors] = useState<Distributor[]>([]);
   const [receipts, setReceipts] = useState<ItemReceipt[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -63,29 +67,49 @@ export default function IncomingGoods({ profile }: { profile: UserProfile }) {
     const shipping = Number(formData.shippingCost) || 0;
     const total = cash + tempo + shipping;
 
-    await addDoc(collection(db, 'item_receipts'), {
-      distributorId: formData.distributorId,
-      itemName: formData.itemName,
-      cashAmount: cash,
-      tempoAmount: tempo,
-      shippingCost: shipping,
-      amount: total,
-      notes: formData.notes || '-',
-      date: new Date(formData.date).toISOString(),
-      ownerId: profile.ownerId,
-      createdAt: new Date().toISOString()
-    });
+    setSyncStatus?.('saving');
+    try {
+      await addDoc(collection(db, 'item_receipts'), {
+        distributorId: formData.distributorId,
+        itemName: formData.itemName,
+        cashAmount: cash,
+        tempoAmount: tempo,
+        shippingCost: shipping,
+        amount: total,
+        notes: formData.notes || '-',
+        date: new Date(formData.date).toISOString(),
+        ownerId: profile.ownerId,
+        createdAt: new Date().toISOString()
+      });
 
-    setFormData({
-      date: format(new Date(), 'yyyy-MM-dd'),
-      distributorId: '',
-      itemName: '',
-      cashAmount: '',
-      tempoAmount: '',
-      shippingCost: '',
-      notes: ''
-    });
-    setIsModalOpen(false);
+      onSave?.();
+      setFormData({
+        date: format(new Date(), 'yyyy-MM-dd'),
+        distributorId: '',
+        itemName: '',
+        cashAmount: '',
+        tempoAmount: '',
+        shippingCost: '',
+        notes: ''
+      });
+      setIsModalOpen(false);
+    } catch (err) {
+      console.error("Error saving receipt:", err);
+      setSyncStatus?.('error');
+      setTimeout(() => setSyncStatus?.('idle'), 3000);
+    }
+  };
+
+  const deleteReceipt = async (id: string) => {
+    setSyncStatus?.('saving');
+    try {
+      await deleteDoc(doc(db, 'item_receipts', id));
+      onSave?.();
+    } catch (err) {
+      console.error("Error deleting receipt:", err);
+      setSyncStatus?.('error');
+      setTimeout(() => setSyncStatus?.('idle'), 3000);
+    }
   };
 
   const filteredReceipts = receipts.filter(r => 
@@ -207,7 +231,7 @@ export default function IncomingGoods({ profile }: { profile: UserProfile }) {
                     <td className="p-6 text-center text-zinc-600">{r.notes}</td>
                     <td className="p-6 text-center">
                       <button 
-                        onClick={() => deleteDoc(doc(db, 'item_receipts', r.id!))}
+                        onClick={() => deleteReceipt(r.id!)}
                         className="text-zinc-700 hover:text-red-500 transition-colors"
                       >
                         <Trash2 size={14} />

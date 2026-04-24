@@ -88,11 +88,22 @@ export default function App() {
 
   const theme = getThemeStyles();
 
+  const syncTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+  const toastTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+
   const triggerSavedToast = () => {
+    // Clear existing timeouts to prevent race conditions
+    if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current);
+    if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
+
     setSyncStatus('saved');
     setShowToast(true);
-    setTimeout(() => setShowToast(false), 2000);
-    setTimeout(() => {
+
+    toastTimeoutRef.current = setTimeout(() => {
+      setShowToast(false);
+    }, 2000);
+
+    syncTimeoutRef.current = setTimeout(() => {
       setSyncStatus('idle');
     }, 4000);
   };
@@ -515,8 +526,8 @@ export default function App() {
               {effectiveProfile && (
                 <>
                   {view === 'reports' && <Reports profile={effectiveProfile} onNavigate={(v) => setView(v)} />}
-                  {view === 'distributors' && <DistributorList profile={effectiveProfile} />}
-                  {view === 'incoming' && <IncomingGoods profile={effectiveProfile} />}
+                  {view === 'distributors' && <DistributorList profile={effectiveProfile} onSave={triggerSavedToast} setSyncStatus={setSyncStatus} />}
+                  {view === 'incoming' && <IncomingGoods profile={effectiveProfile} onSave={triggerSavedToast} setSyncStatus={setSyncStatus} />}
                   {view === 'bills' && <Bills profile={effectiveProfile} appSettings={appSettings} onSave={triggerSavedToast} setSyncStatus={setSyncStatus} />}
                   {view === 'accounts' && <AccountManagement profile={effectiveProfile} />}
                   {view === 'settings' && <Settings profile={effectiveProfile} onSave={triggerSavedToast} setSyncStatus={setSyncStatus} />}
