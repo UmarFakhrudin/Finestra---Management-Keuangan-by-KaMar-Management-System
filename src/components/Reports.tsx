@@ -41,7 +41,7 @@ export default function Reports({ profile, onNavigate }: { profile: UserProfile,
   // Memoized stats to prevent recalculation on every minor state update
   const stats = React.useMemo(() => [
     { label: 'Total Barang Masuk', value: totalIncoming, icon: TrendingUp, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
-    { label: 'Total Tagihan', value: totalBills, icon: FileText, color: 'text-zinc-400', bg: 'bg-zinc-800' },
+    { label: 'Total Tagihan', value: totalBills, icon: FileText, color: 'text-zinc-400 dark:text-zinc-400', bg: 'bg-zinc-200 dark:bg-zinc-800' },
     { label: 'Tagihan Tertunda', value: unpaidBills, icon: Clock, color: 'text-amber-500', bg: 'bg-amber-500/10' },
     { label: 'Tagihan Lunas', value: paidBills, icon: CheckCircle2, color: 'text-emerald-400', bg: 'bg-emerald-400/10' },
   ], [totalIncoming, totalBills, unpaidBills, paidBills]);
@@ -74,7 +74,7 @@ export default function Reports({ profile, onNavigate }: { profile: UserProfile,
           <motion.div 
             key={i} 
             variants={itemVariants}
-            className="bg-[#141417] border border-zinc-800 rounded-[2rem] p-8 shadow-sm hover:border-zinc-700 transition-all group overflow-hidden relative"
+            className="bg-zinc-100 dark:bg-[#141417] border border-zinc-200 dark:border-zinc-800 rounded-[2rem] p-8 shadow-sm hover:border-zinc-300 dark:hover:border-zinc-700 transition-all group overflow-hidden relative"
           >
             <div className="absolute -right-8 -bottom-8 opacity-5 group-hover:scale-125 transition-transform">
                <stat.icon size={120} />
@@ -83,21 +83,21 @@ export default function Reports({ profile, onNavigate }: { profile: UserProfile,
               <stat.icon className={stat.color} size={20} />
             </div>
             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 mb-2 relative z-10">{stat.label}</p>
-            <p className="text-3xl font-light text-white tracking-tight relative z-10">{formatCurrency(stat.value)}</p>
+            <p className="text-3xl font-light text-zinc-900 dark:text-white tracking-tight relative z-10">{formatCurrency(stat.value)}</p>
           </motion.div>
         ))}
       </motion.div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Monthly Summary Section */}
-        <div className="lg:col-span-12 bg-[#141417] border border-zinc-800 rounded-[2.5rem] p-10 overflow-hidden relative">
+        <div className="lg:col-span-12 bg-zinc-100 dark:bg-[#141417] border border-zinc-200 dark:border-zinc-800 rounded-[2.5rem] p-10 overflow-hidden relative">
           <div className="absolute top-0 right-0 p-10 opacity-10">
              <BarChart3 size={200} />
           </div>
           
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative z-10 mb-10">
             <div>
-              <h3 className="text-2xl font-serif text-white italic">Wawasan Bulanan</h3>
+              <h3 className="text-2xl font-serif text-zinc-900 dark:text-white italic">Wawasan Bulanan</h3>
               <p className="text-sm text-zinc-500 mt-1 italic">Alur keuangan untuk {format(new Date(), 'MMMM yyyy')}</p>
             </div>
             <button className="flex items-center gap-3 px-6 py-3 bg-white text-black font-black text-[10px] uppercase tracking-widest rounded-full hover:bg-zinc-200 transition-all shadow-lg shadow-white/5">

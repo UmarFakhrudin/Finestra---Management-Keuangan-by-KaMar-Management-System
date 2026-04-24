@@ -48,6 +48,13 @@ export default function App() {
 
   const getThemeStyles = () => {
     switch (appSettings?.themePreset) {
+      case 'light':
+        return {
+          bgMain: 'bg-zinc-50',
+          bgSidebar: 'bg-white',
+          bgHeader: 'bg-white/80',
+          border: 'border-zinc-200'
+        };
       case 'midnight':
         return {
           bgMain: 'bg-[#020617]',
@@ -84,8 +91,10 @@ export default function App() {
   const triggerSavedToast = () => {
     setSyncStatus('saved');
     setShowToast(true);
-    setTimeout(() => setShowToast(false), 3000);
-    setTimeout(() => setSyncStatus('idle'), 5000);
+    setTimeout(() => setShowToast(false), 2000);
+    setTimeout(() => {
+      setSyncStatus('idle');
+    }, 4000);
   };
 
   // Login form state
@@ -292,7 +301,7 @@ export default function App() {
           <div className="absolute -top-24 -right-24 w-48 h-48 bg-blue-500/10 blur-[80px] rounded-full"></div>
           
           <div className="text-center mb-10 relative z-10">
-            <h1 className="text-4xl font-serif italic text-white tracking-wide mb-2">
+            <h1 className="text-4xl font-serif italic text-zinc-900 dark:text-white tracking-wide mb-2 transition-all">
               {appSettings?.appName || 'Finestra.'}
             </h1>
             <p className="text-[10px] uppercase tracking-[0.3em] text-zinc-500 font-bold">
@@ -310,7 +319,7 @@ export default function App() {
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="w-full bg-zinc-900/50 border border-zinc-800 rounded-2xl py-4 pl-12 pr-4 text-zinc-200 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/20 transition-all placeholder:text-zinc-700"
+                  className="w-full bg-zinc-100 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-2xl py-4 pl-12 pr-4 text-zinc-900 dark:text-zinc-200 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 transition-all placeholder:text-zinc-400 dark:placeholder:text-zinc-700"
                   placeholder="Masukkan username"
                 />
               </div>
@@ -325,7 +334,7 @@ export default function App() {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-zinc-900/50 border border-zinc-800 rounded-2xl py-4 pl-12 pr-4 text-zinc-200 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/20 transition-all placeholder:text-zinc-700"
+                  className="w-full bg-zinc-100 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-2xl py-4 pl-12 pr-4 text-zinc-900 dark:text-zinc-200 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 transition-all placeholder:text-zinc-400 dark:placeholder:text-zinc-700"
                   placeholder="••••••••"
                 />
               </div>
@@ -343,7 +352,7 @@ export default function App() {
 
             <button
               type="submit"
-              className="w-full bg-white text-[#09090b] py-4 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-zinc-200 transition-all hover:shadow-[0_0_30px_-5px_rgba(255,255,255,0.3)]"
+              className="w-full bg-zinc-900 dark:bg-white text-white dark:text-[#09090b] py-4 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-all hover:shadow-[0_0_30px_-5px_rgba(59,130,246,0.3)] dark:hover:shadow-[0_0_30px_-5px_rgba(255,255,255,0.3)]"
             >
               Masuk ke Sistem
             </button>
@@ -390,18 +399,18 @@ export default function App() {
       className={cn(
         "w-full flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all duration-200 active:scale-95 group",
         isActive 
-          ? "bg-zinc-800/50 text-white border border-zinc-700/50 shadow-xl shadow-black/50" 
-          : "text-zinc-500 hover:text-zinc-200 hover:bg-zinc-900/50"
+          ? "bg-blue-600 text-white shadow-xl shadow-blue-600/20" 
+          : "text-zinc-500 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-900/50"
       )}
     >
-      <item.icon size={18} className={cn("transition-transform group-hover:scale-110", isActive ? "text-amber-500" : "")} />
-      {isCollapsed && <span className="text-[13px] font-medium tracking-wide whitespace-nowrap">{item.label}</span>}
-      {isActive && isCollapsed && <ChevronRight size={14} className="ml-auto text-zinc-600" />}
+      <item.icon size={18} className={cn("transition-transform group-hover:scale-110", isActive ? "text-white" : "text-zinc-500")} />
+      {isCollapsed && <span className={cn("text-[13px] font-medium tracking-wide whitespace-nowrap", isActive ? "text-white" : "text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-200")}>{item.label}</span>}
+      {isActive && isCollapsed && <ChevronRight size={14} className="ml-auto text-white/50" />}
     </button>
   ));
 
   return (
-    <div className={cn("min-h-screen flex text-zinc-300 overflow-hidden transition-colors duration-700", theme.bgMain)}>
+    <div className={cn("min-h-screen flex text-zinc-900 dark:text-zinc-300 overflow-hidden transition-colors duration-700", theme.bgMain)}>
       {/* Sidebar Navigation */}
       <aside 
         className={cn(
@@ -413,10 +422,10 @@ export default function App() {
       >
         <div className="p-8 mb-6 cursor-pointer" onClick={() => setSidebarOpen(!isSidebarOpen)}>
           <div className={cn("flex flex-col transition-all duration-300", !isSidebarOpen && "items-center")}>
-            <h1 className={cn("text-3xl font-serif italic text-white tracking-wide transition-all", !isSidebarOpen && "text-xl")}>
+            <h1 className={cn("text-3xl font-serif italic text-zinc-900 dark:text-white tracking-wide transition-all", !isSidebarOpen && "text-xl")}>
               {isSidebarOpen ? (appSettings?.appName || 'Finestra.') : (appSettings?.appName?.charAt(0) || 'F.')}
             </h1>
-            {isSidebarOpen && <p className="text-[9px] uppercase tracking-[0.4em] text-zinc-500 mt-1 font-bold">{appSettings?.tagline || 'Keuangan'}</p>}
+            {isSidebarOpen && <p className="text-[9px] uppercase tracking-[0.4em] text-zinc-400 dark:text-zinc-500 mt-1 font-bold">{appSettings?.tagline || 'Keuangan'}</p>}
           </div>
         </div>
 
@@ -432,14 +441,14 @@ export default function App() {
           ))}
         </nav>
 
-        <div className="mt-auto p-4 border-t border-zinc-800/50">
-          <div className={cn("flex items-center gap-3 p-3 mb-2 rounded-2xl bg-zinc-900/30", !isSidebarOpen && "justify-center px-0")}>
-            <div className="w-10 h-10 rounded-xl bg-amber-600/20 border border-amber-600/30 flex items-center justify-center text-amber-500 text-sm font-black shadow-inner">
+        <div className="mt-auto p-4 border-t border-zinc-200 dark:border-zinc-800/50">
+          <div className={cn("flex items-center gap-3 p-3 mb-2 rounded-2xl bg-zinc-100 dark:bg-zinc-900/30", !isSidebarOpen && "justify-center px-0")}>
+            <div className="w-10 h-10 rounded-xl bg-blue-600/10 border border-blue-600/20 flex items-center justify-center text-blue-600 text-sm font-black shadow-inner">
               {effectiveProfile?.username?.charAt(0).toUpperCase() || 'U'}
             </div>
             {isSidebarOpen && (
               <div className="flex flex-col min-w-0">
-                <span className="text-xs font-bold text-white truncate">{effectiveProfile?.username}</span>
+                <span className="text-xs font-bold text-zinc-900 dark:text-white truncate">{effectiveProfile?.username}</span>
                 <span className="text-[9px] text-zinc-500 uppercase tracking-widest font-black truncate">{effectiveProfile?.role === 'owner' ? 'Pemilik' : 'Staf'}</span>
               </div>
             )}
@@ -447,7 +456,7 @@ export default function App() {
           <button
             onClick={signOut}
             className={cn(
-              "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-zinc-500 hover:text-red-400 hover:bg-red-500/5 transition-all text-sm font-bold uppercase tracking-widest",
+              "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-zinc-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-500/5 transition-all text-sm font-bold uppercase tracking-widest",
               !isSidebarOpen && "justify-center"
             )}
           >
@@ -461,7 +470,7 @@ export default function App() {
       <main className={cn("flex-1 flex flex-col overflow-hidden transition-colors duration-700", theme.bgMain)}>
         <header className={cn("h-24 backdrop-blur-md border-b flex items-center px-10 justify-between sticky top-0 z-40", theme.bgHeader, theme.border)}>
           <div>
-            <h2 className="text-3xl font-serif text-white tracking-tight">
+            <h2 className="text-3xl font-serif text-zinc-900 dark:text-white tracking-tight">
               {navItems.find(i => i.id === view)?.label}
             </h2>
             <p className="text-[11px] text-zinc-500 italic mt-0.5 tracking-wide">
@@ -475,7 +484,7 @@ export default function App() {
           </div>
           
           <div className="flex items-center gap-4">
-             <div className="flex items-center gap-3 px-4 py-1.5 bg-zinc-900/50 border border-zinc-800 rounded-full transition-all">
+             <div className={cn("flex items-center gap-3 px-4 py-1.5 rounded-full transition-all", appSettings?.themePreset === 'light' ? "bg-zinc-100 border border-zinc-200" : "bg-zinc-900/50 border border-zinc-800")}>
                 {syncStatus === 'saving' ? (
                   <div className="w-3 h-3 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
                 ) : syncStatus === 'error' ? (

@@ -15,7 +15,7 @@ export interface AppSettings {
   tagline: string;
   footer: string;
   themeColor: string;
-  themePreset?: 'dark' | 'midnight' | 'slate' | 'modern';
+  themePreset?: 'dark' | 'midnight' | 'slate' | 'modern' | 'light';
   logoUrl?: string;
 }
 

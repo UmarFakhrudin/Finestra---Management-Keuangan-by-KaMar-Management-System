@@ -153,7 +153,7 @@ export default function Bills({ profile, appSettings, onSave, setSyncStatus }: {
   return (
     <div className="space-y-6 font-sans pb-10 text-zinc-300">
       {/* Top Filter Bar */}
-      <div className="bg-[#141417] border border-zinc-800 rounded-2xl p-6 flex flex-col md:flex-row items-center gap-4">
+      <div className="bg-zinc-100 dark:bg-[#141417] border border-zinc-200 dark:border-zinc-800 rounded-2xl p-6 flex flex-col md:flex-row items-center gap-4">
         <div className="flex items-center gap-3 w-full md:w-auto">
           <div className="relative group min-w-[140px]">
              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500">
@@ -213,11 +213,11 @@ export default function Bills({ profile, appSettings, onSave, setSyncStatus }: {
       </div>
 
       {/* Main Table Container */}
-      <div className="bg-[#141417] border border-zinc-800 rounded-2xl overflow-hidden shadow-2xl">
+      <div className="bg-zinc-100 dark:bg-[#141417] border border-zinc-200 dark:border-zinc-800 rounded-2xl overflow-hidden shadow-2xl">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-zinc-950/30 text-zinc-500 text-[10px] font-black uppercase tracking-[0.2em] border-b border-zinc-800">
+              <tr className="bg-zinc-200 dark:bg-zinc-950/30 text-zinc-500 dark:text-zinc-500 text-[10px] font-black uppercase tracking-[0.2em] border-b border-zinc-200 dark:border-zinc-800">
                 <th className="p-6 text-center w-16">No.</th>
                 <th className="p-6">Tanggal</th>
                 <th className="p-6">Distributor</th>
@@ -241,8 +241,8 @@ export default function Bills({ profile, appSettings, onSave, setSyncStatus }: {
                   <tr key={b.id} className="border-b border-zinc-800/50 hover:bg-zinc-900/40 transition-colors">
                     <td className="p-6 text-center text-zinc-600">{i + 1}</td>
                     <td className="p-6">{format(new Date(b.date), 'dd/MM/yyyy')}</td>
-                    <td className="p-6 text-white uppercase tracking-tight">{distributors.find(d => d.id === b.distributorId)?.name || '-'}</td>
-                    <td className="p-6 text-zinc-500 italic">{b.itemName}</td>
+                    <td className="p-6 text-zinc-900 dark:text-white uppercase tracking-tight">{distributors.find(d => d.id === b.distributorId)?.name || '-'}</td>
+                    <td className="p-6 text-zinc-500 dark:text-zinc-500 italic">{b.itemName}</td>
                     <td className="p-6 text-center text-emerald-500/80">{formatCurrency(b.cashAmount || 0)}</td>
                     <td className="p-6 text-center text-amber-500/80">{formatCurrency(b.tempoAmount || 0)}</td>
                     <td className="p-6 text-center text-blue-500/80">{formatCurrency(b.shippingCost || 0)}</td>

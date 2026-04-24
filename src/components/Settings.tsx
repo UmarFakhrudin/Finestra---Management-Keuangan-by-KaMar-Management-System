@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { collection, query, where, onSnapshot, updateDoc, doc, addDoc, deleteDoc, getDocs, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { UserProfile, AppSettings, TeamMember, UserRole } from '../types';
@@ -6,7 +6,7 @@ import {
   Settings as SettingsIcon, Layout, Users, Shield, 
   Trash2, Plus, Save, Palette, Bell, Info, 
   CheckCircle2, Globe, ShieldCheck, Mail, UserPlus,
-  ArrowRight, Heart
+  ArrowRight, Heart, RefreshCcw
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
@@ -21,6 +21,8 @@ export default function Settings({ profile, onSave, setSyncStatus }: {
   const [team, setTeam] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [saved, setSaved] = useState(false);
+  const initialLoad = useRef(true);
+  const saveTimeout = useRef<NodeJS.Timeout | null>(null);
 
   // Form states
   const [appForm, setAppForm] = useState<Partial<AppSettings>>({
@@ -67,6 +69,35 @@ export default function Settings({ profile, onSave, setSyncStatus }: {
     return () => { unsubSettings(); unsubTeam(); };
   }, [profile.ownerId]);
 
+  // Auto-save logic
+  useEffect(() => {
+    if (initialLoad.current) {
+      initialLoad.current = false;
+      return;
+    }
+
+    if (activeTab !== 'app' || !appSettings?.id) return;
+
+    // Debounce save
+    if (saveTimeout.current) clearTimeout(saveTimeout.current);
+    
+    saveTimeout.current = setTimeout(async () => {
+      setSyncStatus?.('saving');
+      try {
+        await updateDoc(doc(db, 'app_settings', appSettings.id), appForm);
+        onSave?.();
+        setSyncStatus?.('saved');
+      } catch (err) {
+        console.error("Auto-save failed:", err);
+        setSyncStatus?.('error');
+      }
+    }, 600); // 600ms debounce for faster feel
+
+    return () => {
+      if (saveTimeout.current) clearTimeout(saveTimeout.current);
+    };
+  }, [appForm, appSettings?.id, activeTab]);
+
   const handleUpdateApp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!appSettings?.id) return;
@@ -103,6 +134,7 @@ export default function Settings({ profile, onSave, setSyncStatus }: {
 
   const presets = [
     { id: 'dark', name: 'Original Dark', bg: 'bg-[#0b0c10]', desc: 'The classic refined dark look' },
+    { id: 'light', name: 'Clean Light', bg: 'bg-zinc-50', desc: 'Minimalist white interface' },
     { id: 'midnight', name: 'Deep Midnight', bg: 'bg-[#10192e]', desc: 'Rich navy blue atmosphere' },
     { id: 'slate', name: 'Modern Slate', bg: 'bg-[#1e293b]', desc: 'Clean slate gray interface' },
     { id: 'modern', name: 'Graphite', bg: 'bg-[#27272a]', desc: 'Solid graphite black aesthetic' },
@@ -191,16 +223,18 @@ export default function Settings({ profile, onSave, setSyncStatus }: {
                             onClick={() => setAppForm({ ...appForm, themePreset: p.id as any })}
                             className={cn(
                               "group relative p-4 rounded-2xl border transition-all flex items-center gap-4 text-left",
-                              appForm.themePreset === p.id ? "border-white bg-white/5" : "border-zinc-800 hover:border-zinc-700 bg-transparent"
+                              appForm.themePreset === p.id 
+                                ? "border-zinc-500 bg-zinc-500/5 shadow-sm" 
+                                : "border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 bg-transparent"
                             )}
                           >
-                            <div className={cn("w-10 h-10 rounded-xl shadow-lg shrink-0", p.bg)} />
+                            <div className={cn("w-10 h-10 rounded-xl shadow-md shrink-0 border border-zinc-200/20", p.bg)} />
                             <div>
-                               <p className="text-[10px] font-black uppercase tracking-tight text-white">{p.name}</p>
+                               <p className="text-[10px] font-black uppercase tracking-tight text-zinc-900 dark:text-white">{p.name}</p>
                                <p className="text-[9px] font-medium text-zinc-500 mt-0.5">{p.desc}</p>
                             </div>
                             {appForm.themePreset === p.id && (
-                               <motion.div layoutId="preset-check" className="absolute top-2 right-2 bg-white text-black p-1 rounded-full shadow-xl">
+                               <motion.div layoutId="preset-check" className="absolute top-2 right-2 bg-blue-500 text-white p-1 rounded-full shadow-lg">
                                   <CheckCircle2 size={10} />
                                </motion.div>
                             )}
