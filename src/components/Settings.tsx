@@ -374,17 +374,26 @@ export default function Settings({ profile, onSave, setSyncStatus }: {
                                  <button
                                    type="button"
                                    onClick={syncToGithub}
-                                   disabled={syncing || !appForm.githubToken}
+                                   disabled={syncing || !appForm.githubToken || !appForm.githubRepo}
                                    className={cn(
                                      "flex items-center gap-2 px-3 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all",
+                                     (!appForm.githubToken || !appForm.githubRepo) ? "bg-zinc-800 text-zinc-500 cursor-not-allowed" :
                                      syncing ? "bg-amber-500/10 text-amber-500" : "bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20"
                                    )}
                                  >
                                     <Cloud size={10} className={cn(syncing && "animate-pulse")} />
                                     {syncing ? 'Syncing...' : 'Sync Now'}
                                  </button>
-                                 <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                                 <span className="text-[8px] font-black text-emerald-500 uppercase">Active</span>
+                                 <div className={cn(
+                                    "w-2 h-2 rounded-full",
+                                    (appForm.githubToken && appForm.githubRepo) ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" : "bg-red-500"
+                                 )} />
+                                 <span className={cn(
+                                    "text-[8px] font-black uppercase",
+                                    (appForm.githubToken && appForm.githubRepo) ? "text-emerald-500" : "text-red-500"
+                                 )}>
+                                    {(appForm.githubToken && appForm.githubRepo) ? 'Connected' : 'Off'}
+                                 </span>
                               </div>
                            </div>
                            <div className="space-y-2">
