@@ -18,6 +18,7 @@ export interface AppSettings {
   themePreset?: 'dark' | 'midnight' | 'slate' | 'modern' | 'light';
   logoUrl?: string;
   githubRepo?: string;
+  githubToken?: string;
 }
 
 export interface TeamMember {

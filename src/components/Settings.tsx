@@ -6,21 +6,23 @@ import {
   Settings as SettingsIcon, Layout, Users, Shield, 
   Trash2, Plus, Save, Palette, Bell, Info, 
   CheckCircle2, Globe, ShieldCheck, Mail, UserPlus,
-  ArrowRight, Heart, RefreshCcw
+  ArrowRight, Heart, RefreshCcw, Cloud
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
+import { pushToGithub, parseGithubUrl } from '../services/githubService';
 
 export default function Settings({ profile, onSave, setSyncStatus }: { 
   profile: UserProfile, 
   onSave?: () => void,
-  setSyncStatus?: (status: 'idle' | 'saving' | 'saved' | 'error') => void 
+  setSyncStatus?: (status: 'idle' | 'saving' | 'saved' | 'error' | 'syncing') => void 
 }) {
   const [activeTab, setActiveTab] = useState<'app' | 'team'>('app');
   const [appSettings, setAppSettings] = useState<AppSettings | null>(null);
   const [team, setTeam] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [saved, setSaved] = useState(false);
+  const [syncing, setSyncing] = useState(false);
   const initialLoad = useRef(true);
   const saveTimeout = useRef<NodeJS.Timeout | null>(null);
 
@@ -85,18 +87,91 @@ export default function Settings({ profile, onSave, setSyncStatus }: {
       setSyncStatus?.('saving');
       try {
         await updateDoc(doc(db, 'app_settings', appSettings.id), appForm);
+        
+        // Auto-sync to GitHub if configured
+        if (appForm.githubRepo && appForm.githubToken) {
+           const parsed = parseGithubUrl(appForm.githubRepo);
+           if (parsed) {
+              await pushToGithub(
+                { ...parsed, token: appForm.githubToken, repo: appForm.githubRepo, owner: parsed.owner, repoName: parsed.repoName },
+                'data/app_settings.json',
+                JSON.stringify(appForm, null, 2),
+                'Auto-sync settings'
+              );
+           }
+        }
+
         onSave?.(); // App.tsx will handle the 'saved' -> 'idle' transition
       } catch (err) {
         console.error("Auto-save failed:", err);
         setSyncStatus?.('error');
         setTimeout(() => setSyncStatus?.('idle'), 3000);
       }
-    }, 400); // Faster 400ms debounce
+    }, 800); // Slightly longer debounce for auto-sync
 
     return () => {
       if (saveTimeout.current) clearTimeout(saveTimeout.current);
     };
   }, [appForm, appSettings?.id, activeTab]);
+
+  const syncToGithub = async () => {
+    if (!appForm.githubRepo || !appForm.githubToken) return;
+    
+    const parsed = parseGithubUrl(appForm.githubRepo);
+    if (!parsed) return;
+
+    setSyncing(true);
+    setSyncStatus?.('syncing');
+
+    try {
+      const config = { ...parsed, token: appForm.githubToken, repo: appForm.githubRepo, owner: parsed.owner, repoName: parsed.repoName };
+      
+      // 1. Sync App Settings
+      await pushToGithub(
+        config,
+        'data/app_settings.json',
+        JSON.stringify({ ...appForm, syncTime: new Date().toISOString() }, null, 2),
+        `Sync settings: ${appForm.appName}`
+      );
+
+      // 2. Fetch and Sync Distributors
+      const distSnap = await getDocs(query(collection(db, 'distributors'), where('ownerId', '==', profile.ownerId)));
+      const distributors = distSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      await pushToGithub(
+        config,
+        'data/distributors.json',
+        JSON.stringify(distributors, null, 2),
+        `Sync distributors: ${distributors.length} items`
+      );
+
+      // 3. Fetch and Sync Bills
+      const billsSnap = await getDocs(query(collection(db, 'bills'), where('ownerId', '==', profile.ownerId)));
+      const bills = billsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      await pushToGithub(
+        config,
+        'data/bills.json',
+        JSON.stringify(bills, null, 2),
+        `Sync bills: ${bills.length} items`
+      );
+
+      // 4. Fetch and Sync Team Members
+      await pushToGithub(
+        config,
+        'data/team_members.json',
+        JSON.stringify(team, null, 2),
+        `Sync team: ${team.length} members`
+      );
+
+      setSyncing(false);
+      setSyncStatus?.('saved');
+      setTimeout(() => setSyncStatus?.('idle'), 2000);
+    } catch (error) {
+      console.error("Github comprehensive sync failed:", error);
+      setSyncing(false);
+      setSyncStatus?.('error');
+      setTimeout(() => setSyncStatus?.('idle'), 3000);
+    }
+  };
 
   const handleUpdateApp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -105,10 +180,15 @@ export default function Settings({ profile, onSave, setSyncStatus }: {
     setSyncStatus?.('saving');
     try {
       await updateDoc(doc(db, 'app_settings', appSettings.id), appForm);
+      
+      // Force sync on manual update
+      if (appForm.githubRepo && appForm.githubToken) {
+         await syncToGithub();
+      }
+
       setSaved(true);
       onSave?.();
-      setTimeout(() => setSaved(true), 2000); // Keep 'Tersimpan' for 2s
-      setTimeout(() => setSaved(false), 4000);
+      setTimeout(() => setSaved(false), 3000);
     } catch (err) {
       console.error("Manual save failed:", err);
       setSyncStatus?.('error');
@@ -291,6 +371,18 @@ export default function Settings({ profile, onSave, setSyncStatus }: {
                                  <p className="text-[9px] text-zinc-500">Gunakan repositori sebagai host utama media & aset</p>
                               </div>
                               <div className="flex items-center gap-2">
+                                 <button
+                                   type="button"
+                                   onClick={syncToGithub}
+                                   disabled={syncing || !appForm.githubToken}
+                                   className={cn(
+                                     "flex items-center gap-2 px-3 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all",
+                                     syncing ? "bg-amber-500/10 text-amber-500" : "bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20"
+                                   )}
+                                 >
+                                    <Cloud size={10} className={cn(syncing && "animate-pulse")} />
+                                    {syncing ? 'Syncing...' : 'Sync Now'}
+                                 </button>
                                  <div className="w-2 h-2 rounded-full bg-emerald-500" />
                                  <span className="text-[8px] font-black text-emerald-500 uppercase">Active</span>
                               </div>
@@ -305,6 +397,19 @@ export default function Settings({ profile, onSave, setSyncStatus }: {
                                 className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-4 text-xs text-white focus:border-blue-500 outline-none"
                               />
                            </div>
+                           <div className="space-y-2">
+                              <p className="text-[9px] font-black uppercase text-zinc-600 ml-1">GitHub Personal Access Token (PAT)</p>
+                              <input 
+                                type="password"
+                                placeholder="ghp_xxxxxxxxxxxx"
+                                value={appForm.githubToken || ''}
+                                onChange={(e) => setAppForm({ ...appForm, githubToken: e.target.value })}
+                                className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-4 text-xs text-white focus:border-blue-500 outline-none"
+                              />
+                           </div>
+                           <p className="text-[8px] text-zinc-500 px-1 leading-relaxed">
+                              * Dengan PAT, sistem dapat melakukan 'Push' media langsung ke branch utama repository Anda secara otomatis.
+                           </p>
                         </div>
                      </div>
 

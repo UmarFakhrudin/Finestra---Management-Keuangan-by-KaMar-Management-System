@@ -22,6 +22,7 @@ import { AppSettings, TeamMember, UserProfile, UserRole } from './types';
 import { onSnapshot } from 'firebase/firestore';
 import { cn } from './lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
+import { pushToGithub, parseGithubUrl } from './services/githubService';
 
 // Components
 import DistributorList from './components/DistributorList';
@@ -45,6 +46,35 @@ export default function App() {
   const [showToast, setShowToast] = useState(false);
   
   const [appSettings, setAppSettings] = useState<AppSettings | null>(null);
+  const [syncing, setSyncing] = useState(false);
+
+  // Background sync logic for GitHub
+  useEffect(() => {
+    if (!appSettings?.githubRepo || !appSettings?.githubToken || !userProfile) return;
+
+    const interval = setInterval(async () => {
+      console.log("Periodic background sync to GitHub initiated...");
+      const parsed = parseGithubUrl(appSettings.githubRepo!);
+      if (!parsed) return;
+
+      try {
+        const config = { ...parsed, token: appSettings.githubToken!, repo: appSettings.githubRepo!, owner: parsed.owner, repoName: parsed.repoName };
+        
+        // Sync Distributors
+        const distSnap = await getDocs(query(collection(db, 'distributors'), where('ownerId', '==', userProfile.ownerId)));
+        await pushToGithub(config, 'data/distributors.json', JSON.stringify(distSnap.docs.map(d => d.data()), null, 2), 'Background sync: Distributors');
+
+        // Sync Bills
+        const billsSnap = await getDocs(query(collection(db, 'bills'), where('ownerId', '==', userProfile.ownerId)));
+        await pushToGithub(config, 'data/bills.json', JSON.stringify(billsSnap.docs.map(d => d.data()), null, 2), 'Background sync: Bills');
+
+      } catch (e) {
+        console.error("Background sync failed:", e);
+      }
+    }, 1000 * 60 * 5); // Every 5 minutes
+
+    return () => clearInterval(interval);
+  }, [appSettings?.githubRepo, appSettings?.githubToken, userProfile]);
 
   const getThemeStyles = () => {
     switch (appSettings?.themePreset) {
