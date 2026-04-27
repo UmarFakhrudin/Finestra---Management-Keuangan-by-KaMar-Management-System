@@ -560,7 +560,7 @@ export default function App() {
                 <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 italic">
                   {syncStatus === 'saving' ? 'Menyimpan...' : 
                    syncStatus === 'syncing' ? 'Sinkron Cloud...' :
-                   syncStatus === 'saved' ? 'Data Tersimpan' : 
+                   syncStatus === 'saved' ? 'Cloud Terupdate ✓' : 
                    syncStatus === 'error' ? 'Kesalahan Sinkron' : 'Sinkronisasi Aktif'}
                 </span>
              </div>

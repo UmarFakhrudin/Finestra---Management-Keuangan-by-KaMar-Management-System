@@ -11,6 +11,7 @@ import {
 import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import { pushToGithub, parseGithubUrl, testGithubConnection } from '../services/githubService';
+import { exportAppData, importAppData } from '../services/dataService';
 
 export default function Settings({ profile, onSave, setSyncStatus }: { 
   profile: UserProfile, 
@@ -408,7 +409,7 @@ export default function Settings({ profile, onSave, setSyncStatus }: {
                                  </button>
                                  <div className={cn(
                                     "w-2 h-2 rounded-full",
-                                    isConnected === true ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" : 
+                                    isConnected === true ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)] animate-pulse" : 
                                     isConnected === false ? "bg-red-500" : "bg-zinc-600"
                                  )} />
                                  <span className={cn(
@@ -416,9 +417,46 @@ export default function Settings({ profile, onSave, setSyncStatus }: {
                                     isConnected === true ? "text-emerald-500" : 
                                     isConnected === false ? "text-red-500" : "text-zinc-500"
                                  )}>
-                                    {isConnected === true ? 'Connected' : isConnected === false ? 'Error' : 'Offline'}
+                                    {isConnected === true ? 'Cloud Active' : isConnected === false ? 'Error' : 'Offline'}
                                  </span>
                               </div>
+                           </div>
+                           
+                           {/* Backup Controls */}
+                           <div className="flex gap-2 mt-4">
+                              <button 
+                                onClick={() => exportAppData(profile.ownerId)}
+                                className="flex-1 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-lg py-2 px-3 flex items-center justify-center gap-2 transition-all group"
+                              >
+                                 <Save size={12} className="text-blue-500 group-hover:scale-110 transition-transform" />
+                                 <span className="text-[9px] font-black text-zinc-400 uppercase">Export Backup</span>
+                              </button>
+                              
+                              <label className="flex-1 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-lg py-2 px-3 flex items-center justify-center gap-2 cursor-pointer group transition-all">
+                                 <Plus size={12} className="text-emerald-500 group-hover:rotate-90 transition-transform" />
+                                 <span className="text-[9px] font-black text-zinc-400 uppercase">Import Data</span>
+                                 <input 
+                                    type="file" 
+                                    className="hidden" 
+                                    accept=".json"
+                                    onChange={async (e) => {
+                                       const file = e.target.files?.[0];
+                                       if (!file) return;
+                                       const reader = new FileReader();
+                                       reader.onload = async (event) => {
+                                          try {
+                                             const json = JSON.parse(event.target?.result as string);
+                                             await importAppData(profile.ownerId, json);
+                                             onSave?.();
+                                             alert('Data berhasil diimport & disinkronkan!');
+                                          } catch (err) {
+                                             alert('Gagal mengimport data. File tidak valid.');
+                                          }
+                                       };
+                                       reader.readAsText(file);
+                                    }}
+                                 />
+                              </label>
                            </div>
                            <div className="space-y-2">
                               <p className="text-[9px] font-black uppercase text-zinc-600 ml-1">GitHub Repo URL</p>
