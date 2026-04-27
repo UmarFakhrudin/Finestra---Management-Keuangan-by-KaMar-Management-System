@@ -300,6 +300,8 @@ export default function Settings({ profile, onSave, setSyncStatus }: {
                               <input 
                                 type="text"
                                 placeholder="https://github.com/username/repo"
+                                value={appForm.githubRepo || 'https://github.com/UmarFakhrudin/Cloudhub-FPOS'}
+                                onChange={(e) => setAppForm({ ...appForm, githubRepo: e.target.value })}
                                 className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-4 text-xs text-white focus:border-blue-500 outline-none"
                               />
                            </div>
