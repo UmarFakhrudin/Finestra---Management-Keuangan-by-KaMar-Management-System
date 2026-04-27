@@ -50,11 +50,24 @@ service cloud.firestore {
     // Collection matches
     match /user_profiles/{userId} {
       allow list: if true; // Allow username lookup during login
-      allow get: if isSignedIn();
-      allow create: if isSignedIn() && isSelf(userId) 
-                    && request.resource.data.role in ['owner', 'staff']
-                    && (request.resource.data.role == 'owner' ? request.resource.data.ownerId == userId : true);
-      allow update: if isSelf(userId) && request.resource.data.role == resource.data.role; 
+      allow get: if true; // Allow lookup during initial profile load
+      allow create: if true; // Allow registration/claiming
+      allow update: if isSignedIn() && (isSelf(userId) || isOwnerOf(resource.data)); 
+    }
+
+    match /team_members/{memberId} {
+      allow list: if true; // Allow username lookup for login/claim
+      allow get: if true;
+      allow create: if isSignedIn() && getUserProfile().role == 'owner';
+      allow delete: if isSignedIn() && getUserProfile().role == 'owner';
+      allow update: if isSignedIn() && getUserProfile().role == 'owner';
+    }
+
+    match /app_settings/{settingId} {
+      allow list: if true;
+      allow get: if true;
+      allow write: if isSignedIn() && getUserProfile().role == 'owner';
+      allow update: if isSignedIn();
     }
 
     match /distributors/{distId} {

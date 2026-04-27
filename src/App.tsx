@@ -235,6 +235,16 @@ export default function App() {
       }
 
       if (snap.empty) {
+        // Also check in team_members
+        const qTeam = query(collection(db, 'team_members'), where('username', '==', username));
+        try {
+          snap = await getDocs(qTeam);
+        } catch (err) {
+          handleFirestoreError(err, 'list', 'team_members');
+        }
+      }
+
+      if (snap.empty) {
         if (isInitialOwner) {
           const email = 'owner@finestra.local';
           let cred;
@@ -265,7 +275,15 @@ export default function App() {
         throw new Error('Username tidak ditemukan.');
       }
 
-      const profile = snap.docs[0].data() as UserProfile;
+      const data = snap.docs[0].data() as any;
+      const isTeamMember = !data.uid && data.password; // New team member from admin
+      
+      // If team member, check initial password
+      if (isTeamMember && data.password !== password) {
+        throw new Error('Password salah untuk akun baru ini.');
+      }
+
+      const profile = data as UserProfile;
       try {
         await loginWithEmail(profile.email, password);
       } catch (err: any) {
@@ -275,7 +293,9 @@ export default function App() {
           if (isInitialOwner && profile.username.toLowerCase() === 'owner') {
              try {
                 const cred = await registerWithEmail(profile.email, password);
-                await setDoc(doc(db, 'user_profiles', cred.user.uid), { ...profile, uid: cred.user.uid });
+                const updatedProfile = { ...profile, uid: cred.user.uid };
+                await setDoc(doc(db, 'user_profiles', cred.user.uid), updatedProfile);
+                setUserProfile(updatedProfile);
                 return;
              } catch (regErr: any) {
                 if (regErr.code === 'auth/email-already-in-use') {
@@ -288,7 +308,9 @@ export default function App() {
              // For non-owner accounts, attempt to claim if first login
              try {
                 const cred = await registerWithEmail(profile.email, password);
-                await setDoc(doc(db, 'user_profiles', cred.user.uid), { ...profile, uid: cred.user.uid });
+                const updatedProfile = { ...profile, uid: cred.user.uid };
+                await setDoc(doc(db, 'user_profiles', cred.user.uid), updatedProfile);
+                setUserProfile(updatedProfile);
                 return;
              } catch (regErr) {
                 throw new Error('Kredensial tidak valid.');
