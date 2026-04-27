@@ -277,22 +277,39 @@ export default function Settings({ profile, onSave, setSyncStatus }: {
                       </div>
                    </div>
 
-                   <div className="space-y-3">
-                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 flex items-center gap-2">
-                        <Layout size={12} className="text-zinc-700" /> Footnote / Footer Copyright
-                      </label>
-                      <input 
-                        type="text"
-                        value={appForm.footer || ''}
-                        onChange={(e) => setAppForm({ ...appForm, footer: e.target.value })}
-                        className="w-full bg-zinc-900/50 border border-zinc-800 rounded-2xl p-5 text-xs text-zinc-500 focus:outline-none focus:border-amber-500"
-                      />
-                   </div>
+                     <div className="space-y-6">
+                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 flex items-center gap-2">
+                          <Globe size={12} className="text-zinc-700" /> Cloud & Deployment Repository
+                        </label>
+                        <div className="bg-zinc-950/30 border border-zinc-800 rounded-3xl p-6 space-y-4">
+                           <div className="flex items-center gap-4 p-4 bg-zinc-900/50 rounded-2xl border border-zinc-800/50">
+                              <div className="w-10 h-10 rounded-xl bg-zinc-800 flex items-center justify-center text-zinc-400">
+                                 <RefreshCcw size={18} />
+                              </div>
+                              <div className="flex-1">
+                                 <p className="text-[10px] font-black uppercase tracking-tight text-white">GitHub Storage Sync</p>
+                                 <p className="text-[9px] text-zinc-500">Gunakan repositori sebagai host utama media & aset</p>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                 <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                                 <span className="text-[8px] font-black text-emerald-500 uppercase">Active</span>
+                              </div>
+                           </div>
+                           <div className="space-y-2">
+                              <p className="text-[9px] font-black uppercase text-zinc-600 ml-1">GitHub Repo URL</p>
+                              <input 
+                                type="text"
+                                placeholder="https://github.com/username/repo"
+                                className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-4 text-xs text-white focus:border-blue-500 outline-none"
+                              />
+                           </div>
+                        </div>
+                     </div>
 
                    <div className="flex justify-between items-center bg-zinc-950 p-6 rounded-3xl border border-zinc-900">
                       <div className="flex items-center gap-4 text-zinc-500">
-                         <Bell size={18} />
-                         <span className="text-[10px] font-bold uppercase tracking-widest italic">Live Preview Sync Enabled</span>
+                         <RefreshCcw size={18} className="animate-spin-slow" />
+                         <span className="text-[10px] font-bold uppercase tracking-widest italic text-zinc-400">GitHub Cloud Storage Active</span>
                       </div>
                       <button 
                         type="submit"
