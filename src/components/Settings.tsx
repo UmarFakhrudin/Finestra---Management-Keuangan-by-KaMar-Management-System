@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
-import { pushToGithub, parseGithubUrl } from '../services/githubService';
+import { pushToGithub, parseGithubUrl, testGithubConnection } from '../services/githubService';
 
 export default function Settings({ profile, onSave, setSyncStatus }: { 
   profile: UserProfile, 
@@ -23,6 +23,7 @@ export default function Settings({ profile, onSave, setSyncStatus }: {
   const [loading, setLoading] = useState(true);
   const [saved, setSaved] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [isConnected, setIsConnected] = useState<boolean | null>(null);
   const initialLoad = useRef(true);
   const saveTimeout = useRef<NodeJS.Timeout | null>(null);
 
@@ -70,6 +71,28 @@ export default function Settings({ profile, onSave, setSyncStatus }: {
 
     return () => { unsubSettings(); unsubTeam(); };
   }, [profile.ownerId]);
+
+  useEffect(() => {
+    if (appForm?.githubRepo && appForm?.githubToken) {
+      const check = async () => {
+        const parsed = parseGithubUrl(appForm.githubRepo!);
+        if (parsed) {
+          const ok = await testGithubConnection({ 
+            owner: parsed.owner, 
+            repoName: parsed.repoName, 
+            token: appForm.githubToken! 
+          });
+          setIsConnected(ok);
+        } else {
+          setIsConnected(false);
+        }
+      };
+      const timeout = setTimeout(check, 1000);
+      return () => clearTimeout(timeout);
+    } else {
+      setIsConnected(null);
+    }
+  }, [appForm?.githubRepo, appForm?.githubToken]);
 
   // Auto-save logic
   useEffect(() => {
@@ -386,13 +409,15 @@ export default function Settings({ profile, onSave, setSyncStatus }: {
                                  </button>
                                  <div className={cn(
                                     "w-2 h-2 rounded-full",
-                                    (appForm.githubToken && appForm.githubRepo) ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" : "bg-red-500"
+                                    isConnected === true ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" : 
+                                    isConnected === false ? "bg-red-500" : "bg-zinc-600"
                                  )} />
                                  <span className={cn(
                                     "text-[8px] font-black uppercase",
-                                    (appForm.githubToken && appForm.githubRepo) ? "text-emerald-500" : "text-red-500"
+                                    isConnected === true ? "text-emerald-500" : 
+                                    isConnected === false ? "text-red-500" : "text-zinc-500"
                                  )}>
-                                    {(appForm.githubToken && appForm.githubRepo) ? 'Connected' : 'Off'}
+                                    {isConnected === true ? 'Connected' : isConnected === false ? 'Error' : 'Offline'}
                                  </span>
                               </div>
                            </div>

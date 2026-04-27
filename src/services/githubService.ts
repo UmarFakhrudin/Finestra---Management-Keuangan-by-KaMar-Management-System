@@ -16,7 +16,7 @@ export async function pushToGithub(config: GithubConfig, path: string, content: 
     try {
       const resp = await fetch(url, {
         headers: {
-          'Authorization': `token ${token}`,
+          'Authorization': `Bearer ${token}`,
           'Accept': 'application/vnd.github.v3+json'
         }
       });
@@ -30,14 +30,14 @@ export async function pushToGithub(config: GithubConfig, path: string, content: 
 
     const body = {
       message,
-      content: btoa(content), // Base64 encode
+      content: btoa(unescape(encodeURIComponent(content))), // Better Base64 encoding for Unicode
       sha
     };
 
     const response = await fetch(url, {
       method: 'PUT',
       headers: {
-        'Authorization': `token ${token}`,
+        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
         'Accept': 'application/vnd.github.v3+json'
       },
@@ -46,7 +46,7 @@ export async function pushToGithub(config: GithubConfig, path: string, content: 
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to push to GitHub');
+      throw new Error(errorData.message || `GitHub Error: ${response.status}`);
     }
 
     return await response.json();
@@ -56,9 +56,23 @@ export async function pushToGithub(config: GithubConfig, path: string, content: 
   }
 }
 
+export async function testGithubConnection(config: { owner: string, repoName: string, token: string }) {
+  const url = `https://api.github.com/repos/${config.owner}/${config.repoName}`;
+  const response = await fetch(url, {
+    headers: {
+      'Authorization': `Bearer ${config.token}`,
+      'Accept': 'application/vnd.github.v3+json'
+    }
+  });
+  return response.ok;
+}
+
 export function parseGithubUrl(url: string) {
   try {
-    const parts = url.replace('https://github.com/', '').split('/');
+    // Remove .git if present and trailing slashes
+    const cleanUrl = url.replace(/\.git$/, '').replace(/\/$/, '');
+    const parts = cleanUrl.replace('https://github.com/', '').split('/');
+    if (parts.length < 2) return null;
     return {
       owner: parts[0],
       repoName: parts[1]
