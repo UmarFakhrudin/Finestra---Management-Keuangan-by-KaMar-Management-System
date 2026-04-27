@@ -528,6 +528,8 @@ export default function App() {
              <div className={cn("flex items-center gap-3 px-4 py-1.5 rounded-full transition-all", appSettings?.themePreset === 'light' ? "bg-zinc-100 border border-zinc-200" : "bg-zinc-900/50 border border-zinc-800")}>
                 {syncStatus === 'saving' ? (
                   <div className="w-3 h-3 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
+                ) : syncStatus === 'syncing' ? (
+                  <div className="w-3 h-3 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
                 ) : syncStatus === 'error' ? (
                   <div className="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]" />
                 ) : (
@@ -535,6 +537,7 @@ export default function App() {
                 )}
                 <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 italic">
                   {syncStatus === 'saving' ? 'Menyimpan...' : 
+                   syncStatus === 'syncing' ? 'Sinkron Cloud...' :
                    syncStatus === 'saved' ? 'Data Tersimpan' : 
                    syncStatus === 'error' ? 'Kesalahan Sinkron' : 'Sinkronisasi Aktif'}
                 </span>

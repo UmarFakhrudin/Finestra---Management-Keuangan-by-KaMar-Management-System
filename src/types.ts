@@ -27,6 +27,7 @@ export interface TeamMember {
   email: string;
   role: UserRole;
   username: string;
+  password?: string;
   createdAt: string;
 }
 

@@ -38,6 +38,7 @@ export default function Settings({ profile, onSave, setSyncStatus }: {
   const [teamForm, setTeamForm] = useState({
     email: '',
     username: '',
+    password: '',
     role: 'admin staff' as UserRole
   });
 
@@ -110,21 +111,20 @@ export default function Settings({ profile, onSave, setSyncStatus }: {
       setSyncStatus?.('saving');
       try {
         await updateDoc(doc(db, 'app_settings', appSettings.id), appForm);
+        onSave?.(); // App.tsx will handle the 'saved' -> 'idle' transition
         
-        // Auto-sync to GitHub if configured
+        // Auto-sync to GitHub if configured (as Side Effect)
         if (appForm.githubRepo && appForm.githubToken) {
            const parsed = parseGithubUrl(appForm.githubRepo);
            if (parsed) {
-              await pushToGithub(
+              pushToGithub(
                 { ...parsed, token: appForm.githubToken, repo: appForm.githubRepo, owner: parsed.owner, repoName: parsed.repoName },
                 'data/app_settings.json',
                 JSON.stringify(appForm, null, 2),
                 'Auto-sync settings'
-              );
+              ).catch(e => console.error("Auto-sync background failed:", e));
            }
         }
-
-        onSave?.(); // App.tsx will handle the 'saved' -> 'idle' transition
       } catch (err) {
         console.error("Auto-save failed:", err);
         setSyncStatus?.('error');
@@ -203,15 +203,14 @@ export default function Settings({ profile, onSave, setSyncStatus }: {
     setSyncStatus?.('saving');
     try {
       await updateDoc(doc(db, 'app_settings', appSettings.id), appForm);
-      
-      // Force sync on manual update
-      if (appForm.githubRepo && appForm.githubToken) {
-         await syncToGithub();
-      }
-
+      onSave?.(); // Inform App.tsx immediately (sets 'saved' and shows toast)
       setSaved(true);
-      onSave?.();
       setTimeout(() => setSaved(false), 3000);
+      
+      // Secondary Sync Action - don't block the 'saved' status UI
+      if (appForm.githubRepo && appForm.githubToken) {
+         syncToGithub(); // No await here to keep UI responsive
+      }
     } catch (err) {
       console.error("Manual save failed:", err);
       setSyncStatus?.('error');
@@ -226,7 +225,7 @@ export default function Settings({ profile, onSave, setSyncStatus }: {
       ownerId: profile.ownerId,
       createdAt: new Date().toISOString()
     });
-    setTeamForm({ email: '', username: '', role: 'admin staff' });
+    setTeamForm({ email: '', username: '', password: '', role: 'admin staff' });
   };
 
   const removeTeamMember = async (id: string) => {
@@ -477,7 +476,7 @@ export default function Settings({ profile, onSave, setSyncStatus }: {
                        Otorisasi Akses Tim
                     </h3>
                     
-                    <form onSubmit={handleAddTeamMember} className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+                    <form onSubmit={handleAddTeamMember} className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
                        <div className="space-y-2">
                           <label className="text-[10px] font-black uppercase tracking-widest text-zinc-600">Email User</label>
                           <div className="relative">
@@ -501,6 +500,20 @@ export default function Settings({ profile, onSave, setSyncStatus }: {
                              onChange={(e) => setTeamForm({ ...teamForm, username: e.target.value })}
                              className="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-4 px-6 text-xs text-white focus:border-blue-500 outline-none"
                           />
+                       </div>
+                       <div className="space-y-2">
+                          <label className="text-[10px] font-black uppercase tracking-widest text-zinc-600">Password Access</label>
+                          <div className="relative">
+                             <Shield className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-700" size={14} />
+                             <input 
+                               required
+                               type="password"
+                               placeholder="••••••••"
+                               value={teamForm.password}
+                               onChange={(e) => setTeamForm({ ...teamForm, password: e.target.value })}
+                               className="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-4 pl-12 pr-4 text-xs text-white focus:border-blue-500 outline-none"
+                             />
+                          </div>
                        </div>
                        <div className="space-y-2">
                           <label className="text-[10px] font-black uppercase tracking-widest text-zinc-600">Role Otoritas</label>
